@@ -1,11 +1,31 @@
 " Use Vim settings, rather than Vi settings (much better!).
 " This must be first, because it changes other options as a side effect.
 set nocompatible
-set rtp+=~/.vim/bundle/vundle
+
+filetype off                   " required!
+
+" see :h vundle for more details or wiki for FAQ
 call vundle#rc()
-Bundle 'gmaric/vundle'
-Bundle 'scrooloose/nerdtree'
+
+" My Bundles here:
+"
+" original repos on github
+" Bundle 'tpope/vim-fugitive'
+" Bundle 'Lokaltog/vim-easymotion'
+" Bundle 'rstacruz/sparkup', {'rtp': 'vim/'}
+" Bundle 'tpope/vim-rails.git'
+Bundle 'embear/vim-localvimrc'
+let g:localvimrc_sourced_once=1
+let g:localvimrc_persistent=2
+" vim-scripts repos
+" Bundle 'L9'
+" Bundle 'FuzzyFinder'
+" non github repos
+" Bundle 'git://git.wincent.com/command-t.git'
 " allow backspacing over everything in insert mode
+
+filetype plugin indent on     " required!
+
 set backspace=indent,eol,start
 " колво комманд в памяти
 set history=100
@@ -13,13 +33,15 @@ set ruler		" show the cursor position all the time
 set showcmd		" display incomplete commands
 set incsearch		" do incremental searching
 syntax on
-set tabstop=4
+
 " Insert spaces instead of tab symbols
 "set expandtab
+set tabstop=4
 set shiftwidth=4
+
 set number
 set printoptions=number:y
-set dir=~/.vim/swp
+set dir=/tmp
 set mouse=a
 "set makeprg=make\ %<
 
@@ -27,8 +49,9 @@ set statusline=%<%f\ %h%m%r%=%-14.(%l,%c%V%)\ %P
 set laststatus=2
 
 "Cpp completion
-set tags +=~/.vim/tags/cpp
+"set tags +=~/.vim/tags/cpp
 nmap <F12> :!ctags -R --sort=yes --c++-kinds=+pl --fields=+iaS --extra=+q .<CR>
+
 "OmniCppComplete
 let OmniCpp_NamespaceSearch = 1
 let OmniCpp_GlobalScopeSearch = 1
@@ -37,7 +60,7 @@ let OmniCpp_ShowPrototypeInAbbr = 1 " show function parameters
 "let OmniCpp_MayCompleteDot = 1 " autocomplete after .
 "let OmniCpp_MayCompleteArrow = 1 " autocomplete after ->
 "let OmniCpp_MayCompleteScope = 1 " autocomplete after ::
-let OmniCpp_DefaultNamespaces = ["std", "_GLIBCXX_STD"]
+"let OmniCpp_DefaultNamespaces = ["std", "_GLIBCXX_STD"]
 " automatically open and close the popup menu / preview window
 au CursorMovedI,InsertLeave * if pumvisible() == 0|silent! pclose|endif
 set completeopt=menuone,menu,longest ",preview
@@ -49,20 +72,28 @@ endfunction
 
 function! UpdateTags()
 	call GetTagFile()
-  	let f = expand("%:p")
+	let f = expand("%:p")
 	let cmd = 'ctags -a -f ' . g:TagFilename . ' --c++-kinds=+pl --fields=+iaS --extra=+q ' . '"' . f . '"'
-	system(cmd)
+	let rc = system(cmd)
 endfunction
 
 function! DelTags()
 	call GetTagFile()
 	let cmd = 'rm ' . g:TagFilename
-	system(cmd)
+	let rc = system(cmd)
+endfunction
+
+function! SaveSession()
+	let n = len(filter(range(1, bufnr('$')), 'buflisted(v:val)'))
+	if n > 1
+		mks!
+	endif
 endfunction
 
 set tags+=./tags.workfile
 "autocmd BufWritePost,BufEnter *.cpp,*.h,*.c call UpdateTags()
-"autocmd VimLeave *.cpp,*.h,*.c call DelTags() call
+"autocmd VimLeave *.cpp,*.h,*.c call DelTags()
+autocmd VimLeave *.cpp,*.h,*.c,*.java,*.mk,Makefile,*.sh call SaveSession()
 
 "automatic close and open quifix window
 autocmd QuickFixCmdPost [^l]* nested cwindow
@@ -158,7 +189,20 @@ let Tlist_File_Fold_Auto_Close = 1
 nnoremap <silent> <F9> :NERDTreeToggle<CR>
 let NERDTreeQuitOnOpen=1
 
+"Handle Session.vim
+if filereadable("Session.vim")
+	source Session.vim
+endif
 "cscope
+" add any database in current directory
+if filereadable("cscope.out")
+    cs add cscope.out
+endif
+
+if $CSCOPE_DB != ""
+    cs add $CSCOPE_DB
+endif
+
 nmap <C-_>s :cs find s <C-R>=expand("<cword>")<CR><CR>
 nmap <C-_>g :cs find g <C-R>=expand("<cword>")<CR><CR>
 nmap <C-_>c :cs find c <C-R>=expand("<cword>")<CR><CR>
@@ -166,7 +210,6 @@ nmap <C-_>t :cs find t <C-R>=expand("<cword>")<CR><CR>
 nmap <C-_>e :cs find e <C-R>=expand("<cword>")<CR><CR>
 nmap <C-_>f :cs find f <C-R>=expand("<cfile>")<CR><CR>
 nmap <C-_>i :cs find i ^<C-R>=expand("<cfile>")<CR>$<CR>
-nmap <C-_>d :cs find d <C-R>=expand("<cword>")<CR><CR>
 
 nmap <C-\>s :tab cs f s <C-R>=expand("<cword>")<CR><CR>
 nmap <C-\>g :tab cs f g <C-R>=expand("<cword>")<CR><CR>
@@ -177,23 +220,12 @@ nmap <C-\>f :tab cs f f <C-R>=expand("<cfile>")<CR><CR>
 nmap <C-\>i :tab cs f i ^<C-R>=expand("<cfile>")<CR>$<CR>
 nmap <C-\>d :tab cs f d <C-R>=expand("<cword>")<CR><CR>
 
-" Using 'CTRL-spacebar' then a search type makes the vim window
-" split horizontally, with search result displayed in
-" the new window.
-nmap <C-Space>s :scs find s <C-R>=expand("<cword>")<CR><CR>
-nmap <C-Space>g :scs find g <C-R>=expand("<cword>")<CR><CR>
-nmap <C-Space>c :scs find c <C-R>=expand("<cword>")<CR><CR>
-nmap <C-Space>t :scs find t <C-R>=expand("<cword>")<CR><CR>
-nmap <C-Space>e :scs find e <C-R>=expand("<cword>")<CR><CR>
-nmap <C-Space>f :scs find f <C-R>=expand("<cfile>")<CR><CR>
-nmap <C-Space>i :scs find i ^<C-R>=expand("<cfile>")<CR>$<CR>
-nmap <C-Space>d :scs find d <C-R>=expand("<cword>")<CR><CR>
 "
 " Hitting CTRL-space *twice* before the search type does a vertical
 " split instead of a horizontal one
-nmap <C-Space><C-Space>s
+nmap <C-_><C-_>s
 	\:vert scs find s <C-R>=expand("<cword>")<CR><CR>
-nmap <C-Space><C-Space>g
+nmap <C-_><C-_>g
 	\:vert scs find g <C-R>=expand("<cword>")<CR><CR>
 nmap <C-Space><C-Space>c
 	\:vert scs find c <C-R>=expand("<cword>")<CR><CR>
@@ -219,21 +251,15 @@ autocmd InsertLeave * match ExtraWhitespace /\s\+$/
 autocmd BufWinLeave * call clearmatches()
 
 "подсветка выхода за рамки
-set cc=80
-set cul
-"hi ColorColumn ctermfg=red
+"set cc=80
+"set cul
+"hi ColorColumn ctermfg=black
 
 "для утилиты find
 set path+=**
 
 "поддержка синтаксиса для разных расширений
-"autocmd BufEnter *.aidl set filetype=java
-autocmd BufEnter .workrc call SetFileTypeSH("bash")
-autocmd BufEnter .commonrc call SetFileTypeSH("bash")
-autocmd BufEnter *.exp set filetype=tcl
-"autocmd BufEnter *.ptl set filetype=python
-"autocmd BufEnter *.pti set filetype=python
-"autocmd BufEnter *.sh colors xoria256
+autocmd BufEnter .workrc,.commonrc,.myzshrc call SetFileTypeSH("bash")
 
 "autocmd BufEnter *.c set shiftwidth=8
 "autocmd BufEnter *.h set tabstop=8
@@ -264,12 +290,6 @@ map <F11> :!cscreate.sh <CR><CR>
 map <Leader>hon :%!xxd<CR>
 map <Leader>hof :%!xxd -r<CR>
 
-" Enable file type detection.
-" Use the default filetype settings, so that mail gets 'tw' set to 72,
-" 'cindent' is on in C files, etc.
-" Also load indent files, to automatically do language-dependent indenting.
-filetype plugin indent on
-
 " XML stuff
 let g:xml_syntax_folding = 1
 "au FileType xml setlocal foldmethod=syntax
@@ -284,3 +304,18 @@ au FileType tex set makeprg=pdflatex\ %
 
 "grep
 nnoremap gr :vimgrep <cword> **<CR>
+
+function! DiscardSpaceIdent()
+  set noexpandtab
+  set tabstop=4
+  set shiftwidth=4
+endfunction
+
+function! RestoreSpaceIdent()
+  set expandtab
+  set tabstop=2
+  set shiftwidth=2
+endfunction
+
+autocmd BufEnter Makefile,makefile call DiscardSpaceIdent()
+autocmd BufLeave Makefile,makefile call RestoreSpaceIdent()
