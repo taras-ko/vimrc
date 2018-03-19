@@ -155,3 +155,5 @@ endfunction
 set nowrap
 
 let g:localvimrc_persistent=2
+
+set ic
